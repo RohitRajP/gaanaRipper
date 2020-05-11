@@ -26,7 +26,13 @@ const getAudioTitles = async (htmlContent) => {
   const $ = cheerio.load(htmlContent);
   // fetching the album title
   const albumTitle = $("._d_tp_det").find("h1").text();
-  console.log(albumTitle);
+  // fetching all Divs containing all songs
+  const songDivs = $(".content-container").find(".track_npqitemdetail");
+  songDivs.each((i, songDiv) => {
+    let songTitle = $(songDiv).find("span").text();
+    console.log(songTitle);
+  });
+
   return true;
 };
 
