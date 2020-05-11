@@ -20,20 +20,64 @@ const getHTMLContent = async (playlistURL) => {
   return html;
 };
 
-// gets the audio song titles from the html document
-const getAudioTitles = async (htmlContent) => {
+// gets the audio song titles from the html document and album title
+const getAlbumInfo = async (htmlContent) => {
   // loading html content into cheerio
   const $ = cheerio.load(htmlContent);
   // fetching the album title
   const albumTitle = $("._d_tp_det").find("h1").text();
+  // holds the list of song titles
+  const songTitles = [];
   // fetching all Divs containing all songs
   const songDivs = $(".content-container").find(".track_npqitemdetail");
+  // iterating through each div
   songDivs.each((i, songDiv) => {
-    let songTitle = $(songDiv).find("span").text();
-    console.log(songTitle);
+    songTitles.push($(songDiv).find("span").text());
   });
+  // creating album object
+  const albumObj = { albumTitle: albumTitle };
+  // pushing album songs into albumObj
+  albumObj["songTitles"] = songTitles;
+  return albumObj;
+};
 
-  return true;
+// gets the ytCat objects for all songs
+const getYTCatObjs = async (audioTitles) => {
+  // holds the list of YTCatObjects
+  const ytCatObjs = [];
+
+  // iterating through each audioTitle
+  for (audioTitle of audioTitles) {
+    while (true) {
+      console.log("GETTING " + audioTitle);
+      try {
+        // sending ytCat request
+        let ytCatResponse = await axios.get(
+          "https://staging-api.openbeats.live/ytcat?q=" +
+            audioTitle +
+            " audio&fr=true"
+        );
+        // checking if data is returned
+        if (ytCatResponse.data["data"].length > 0) {
+          console.log("GOT", "\n");
+          // pushing data into list
+          ytCatObjs.push(ytCatResponse.data["data"][0]);
+          break;
+        } else {
+          console.log("Returned NULL... Retrying");
+        }
+      } catch (err) {
+        res.send({
+          status: false,
+          error: audioTitle + " " + err,
+        });
+        break;
+      }
+    }
+  }
+
+  // returning the object containing all the song objects
+  return ytCatObjs;
 };
 
 // fetches the gaana song list
@@ -42,7 +86,14 @@ exports.fetchGannaSongs = async (req, res, next) => {
   const playlistURL = req.body["playlistURL"];
   // getting html content from the playlist url
   const htmlContent = await getHTMLContent(playlistURL);
-  // getting the list of audio titles
-  const audioTitles = await getAudioTitles(htmlContent);
-  res.send({ status: true, htmlContent: htmlContent });
+  // getting the list of audio titles and album title
+  const albumObj = await getAlbumInfo(htmlContent);
+  //  gets the ytCat objects for all songs
+  const ytCatObjs = await getYTCatObjs(albumObj["songTitles"]);
+  res.send({
+    status: true,
+    audioTitlesInGaana: albumObj["songTitles"].length,
+    audioObjsFetched: ytCatObjs.length,
+    data: ytCatObjs,
+  });
 };
