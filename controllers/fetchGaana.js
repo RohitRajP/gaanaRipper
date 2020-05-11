@@ -6,7 +6,9 @@ const puppeteer = require("puppeteer");
 // gets the html content of the playlist page
 const getHTMLContent = async (playlistURL) => {
   // initializing puppeteer instance
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   // navigate to the playlist page
   const page = await browser.newPage();
   // navigating to playlist page and waiting till the page loads
@@ -110,6 +112,6 @@ exports.fetchGannaSongs = async (req, res, next) => {
     });
   } catch (err) {
     // sending error response
-    res.send({ status: false, error: err });
+    res.send({ status: false, error: err, errorPos: "Main" });
   }
 };
