@@ -4,46 +4,64 @@ const axios = require("axios");
 const puppeteer = require("puppeteer");
 
 // gets the html content of the playlist page
-const getHTMLContent = async (playlistURL) => {
-  // initializing puppeteer instance
-  const browser = await puppeteer.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
-  // navigate to the playlist page
-  const page = await browser.newPage();
-  // navigating to playlist page and waiting till the page loads
-  await page.goto(playlistURL, { waitUntil: "networkidle2" });
-  // getting html content of the page
-  const html = await page.content();
-  // close the page
-  browser.close();
-  // returning the html content
-  return html;
+const getHTMLContent = async (playlistURL, res) => {
+  try {
+    // initializing puppeteer instance
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    // navigate to the playlist page
+    const page = await browser.newPage();
+    // navigating to playlist page and waiting till the page loads
+    await page.goto(playlistURL, { waitUntil: "networkidle2" });
+    // getting html content of the page
+    const html = await page.content();
+    // close the page
+    browser.close();
+    // returning the html content
+    return html;
+  } catch (err) {
+    res.send({ status: false, error: "Puppeteer Error" });
+  }
 };
 
 // gets the audio song titles from the html document and album title
-const getAlbumInfo = async (htmlContent) => {
-  // loading html content into cheerio
-  const $ = cheerio.load(htmlContent);
-  // fetching the album title
-  let albumTitle = $("._d_tp_det").find("h1").text();
-  // checking if albumTitle returned empty (if this is a trending list)
-  if (albumTitle.length === 0) {
-    albumTitle = $(".trendingtitle").text();
+const getAlbumInfo = async (htmlContent, res) => {
+  try {
+    // loading html content into cheerio
+    const $ = cheerio.load(htmlContent);
+    // fetching the album title
+    let albumTitle = $("._d_tp_det").find("h1").text();
+    // checking if albumTitle returned empty (if this is a trending list)
+    if (albumTitle.length === 0) {
+      albumTitle = $(".trendingtitle").text();
+    }
+    // holds the list of song titles
+    const songsLst = [];
+    // fetching all Divs containing all songs
+    const songDivs = $(".content-container").find(".track_npqitemdetail");
+    // iterating through each div
+    songDivs.each((i, songDiv) => {
+      // constains instance of each song
+      let songObj = {};
+      // getting the song title
+      songObj["title"] = $(songDiv).find("span").text();
+      // cycling through the artists and getting the first one
+      $(songDiv)
+        .find("a")
+        .each((i, artistAnchor) => {
+          songObj["artist"] = $(artistAnchor).text();
+        });
+      songsLst.push(songObj);
+    });
+    // creating album object
+    const albumObj = { albumTitle: albumTitle };
+    // pushing album songs into albumObj
+    albumObj["songsLst"] = songsLst;
+    return albumObj;
+  } catch (err) {
+    res.send({ status: false, error: "Error in getting album info" });
   }
-  // holds the list of song titles
-  const songTitles = [];
-  // fetching all Divs containing all songs
-  const songDivs = $(".content-container").find(".track_npqitemdetail");
-  // iterating through each div
-  songDivs.each((i, songDiv) => {
-    songTitles.push($(songDiv).find("span").text());
-  });
-  // creating album object
-  const albumObj = { albumTitle: albumTitle };
-  // pushing album songs into albumObj
-  albumObj["songTitles"] = songTitles;
-  return albumObj;
 };
 
 // gets the ytCat objects for all songs
@@ -59,7 +77,7 @@ const getYTCatObjs = async (audioTitles, res) => {
       try {
         // sending ytCat request
         let ytCatResponse = await axios.get(
-          "https://staging-api.openbeats.live/ytcat?q=" +
+          "https://staging-api.opeasdfanbeats.live/ytcat?q=" +
             audioTitle +
             " audio&fr=true"
         );
@@ -97,21 +115,26 @@ exports.fetchGannaSongs = async (req, res, next) => {
     // getting the playlist url
     const playlistURL = req.body["playlistURL"];
     // getting html content from the playlist url
-    const htmlContent = await getHTMLContent(playlistURL);
+    const htmlContent = await getHTMLContent(playlistURL, res);
     // getting the list of audio titles and album title
-    const albumObj = await getAlbumInfo(htmlContent);
-    //  gets the ytCat objects for all songs
-    const ytCatObjs = await getYTCatObjs(albumObj["songTitles"], res);
-    // sending final response
-    res.send({
-      status: true,
-      albumTitle: albumObj["albumTitle"],
-      audioTitlesInGaana: albumObj["songTitles"].length,
-      audioObjsFetched: ytCatObjs.length,
-      data: ytCatObjs,
-    });
+    const albumObj = await getAlbumInfo(htmlContent, res);
+
+    console.log("Album Object: ");
+    console.log(albumObj);
+
+    res.send({ status: true, message: "Under Development" });
+    // //  gets the ytCat objects for all songs
+    // const ytCatObjs = await getYTCatObjs(albumObj["songsLst"], res);
+    // // sending final response
+    // res.send({
+    //   status: true,
+    //   albumTitle: albumObj["albumTitle"],
+    //   audioTitlesInGaana: albumObj["songsLst"].length,
+    //   audioObjsFetched: ytCatObjs.length,
+    //   data: ytCatObjs,
+    // });
   } catch (err) {
     // sending error response
-    res.send({ status: false, error: err, errorPos: "Main" });
+    res.send({ status: false, error: err, errorPos: "Main method throw" });
   }
 };
