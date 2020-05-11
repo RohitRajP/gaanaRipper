@@ -14,4 +14,4 @@ app.use(bodyParser.json());
 app.use("/fetchsongs", fetchSongs);
 
 // starting server
-app.listen(4000);
+app.listen(process.env.PORT || 4000);
