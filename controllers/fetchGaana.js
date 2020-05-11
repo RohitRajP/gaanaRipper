@@ -119,22 +119,28 @@ const getAlbumInfo = async (htmlContent, res) => {
 };
 
 // gets the ytCat objects for all songs
-const getYTCatObjs = async (audioTitles, res) => {
+const getYTCatObjs = async (songLst, res) => {
   // holds the list of YTCatObjects
   const ytCatObjs = [];
 
   // iterating through each audioTitle
-  for (const audioTitle of audioTitles) {
+  for (const song of songLst) {
     // run till error is returned or the value is fetched
     while (true) {
-      console.log("GETTING " + audioTitle);
+      console.log(song);
+
+      console.log("GETTING " + song["title"]);
       try {
+        // setting up URL to ping
+        let ytcatUrl =
+          "https://staging-api.openbeats.live/ytcat?q=" +
+          song["title"] +
+          " " +
+          song["artist"] +
+          " audio&fr=true";
+        console.log(ytcatUrl);
         // sending ytCat request
-        let ytCatResponse = await axios.get(
-          "https://staging-api.opeasdfanbeats.live/ytcat?q=" +
-            audioTitle +
-            " audio&fr=true"
-        );
+        let ytCatResponse = await axios.get(ytcatUrl);
         // cheking for response status
         if (ytCatResponse.status === 200) {
           // checking if data is returned
@@ -172,21 +178,16 @@ exports.fetchGannaSongs = async (req, res, next) => {
     const htmlContent = await getHTMLContent(playlistURL, res);
     // getting the list of audio titles and album title
     const albumObj = await getAlbumInfo(htmlContent, res);
-
-    console.log("Album Object: ");
-    console.log(albumObj);
-
-    res.send({ status: true, message: "Under Development" });
-    // //  gets the ytCat objects for all songs
-    // const ytCatObjs = await getYTCatObjs(albumObj["songsLst"], res);
-    // // sending final response
-    // res.send({
-    //   status: true,
-    //   albumTitle: albumObj["albumTitle"],
-    //   audioTitlesInGaana: albumObj["songsLst"].length,
-    //   audioObjsFetched: ytCatObjs.length,
-    //   data: ytCatObjs,
-    // });
+    //  gets the ytCat objects for all songs
+    const ytCatObjs = await getYTCatObjs(albumObj["songsLst"], res);
+    // sending final response
+    res.send({
+      status: true,
+      albumTitle: albumObj["albumTitle"],
+      audioTitlesInGaana: albumObj["songsLst"].length,
+      audioObjsFetched: ytCatObjs.length,
+      data: ytCatObjs,
+    });
   } catch (err) {
     // sending error response
     res.send({ status: false, error: err, errorPos: "Main method throw" });
