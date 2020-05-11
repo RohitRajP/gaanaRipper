@@ -2,7 +2,6 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
 const puppeteer = require("puppeteer");
-const fs = require("fs");
 
 // gets the html content of the playlist page
 const getHTMLContent = async (playlistURL) => {
@@ -25,7 +24,11 @@ const getAlbumInfo = async (htmlContent) => {
   // loading html content into cheerio
   const $ = cheerio.load(htmlContent);
   // fetching the album title
-  const albumTitle = $("._d_tp_det").find("h1").text();
+  let albumTitle = $("._d_tp_det").find("h1").text();
+  // checking if albumTitle returned empty (if this is a trending list)
+  if (albumTitle.length === 0) {
+    albumTitle = $(".trendingtitle").text();
+  }
   // holds the list of song titles
   const songTitles = [];
   // fetching all Divs containing all songs
@@ -42,12 +45,13 @@ const getAlbumInfo = async (htmlContent) => {
 };
 
 // gets the ytCat objects for all songs
-const getYTCatObjs = async (audioTitles) => {
+const getYTCatObjs = async (audioTitles, res) => {
   // holds the list of YTCatObjects
   const ytCatObjs = [];
 
   // iterating through each audioTitle
-  for (audioTitle of audioTitles) {
+  for (const audioTitle of audioTitles) {
+    // run till error is returned or the value is fetched
     while (true) {
       console.log("GETTING " + audioTitle);
       try {
@@ -57,14 +61,19 @@ const getYTCatObjs = async (audioTitles) => {
             audioTitle +
             " audio&fr=true"
         );
-        // checking if data is returned
-        if (ytCatResponse.data["data"].length > 0) {
-          console.log("GOT", "\n");
-          // pushing data into list
-          ytCatObjs.push(ytCatResponse.data["data"][0]);
-          break;
+        // cheking for response status
+        if (ytCatResponse.status === 200) {
+          // checking if data is returned
+          if (ytCatResponse.data["data"].length > 0) {
+            console.log("GOT", "\n");
+            // pushing data into list
+            ytCatObjs.push(ytCatResponse.data["data"][0]);
+            break;
+          } else {
+            console.log("Returned NULL... Retrying");
+          }
         } else {
-          console.log("Returned NULL... Retrying");
+          break;
         }
       } catch (err) {
         res.send({
@@ -82,18 +91,25 @@ const getYTCatObjs = async (audioTitles) => {
 
 // fetches the gaana song list
 exports.fetchGannaSongs = async (req, res, next) => {
-  // getting the playlist url
-  const playlistURL = req.body["playlistURL"];
-  // getting html content from the playlist url
-  const htmlContent = await getHTMLContent(playlistURL);
-  // getting the list of audio titles and album title
-  const albumObj = await getAlbumInfo(htmlContent);
-  //  gets the ytCat objects for all songs
-  const ytCatObjs = await getYTCatObjs(albumObj["songTitles"]);
-  res.send({
-    status: true,
-    audioTitlesInGaana: albumObj["songTitles"].length,
-    audioObjsFetched: ytCatObjs.length,
-    data: ytCatObjs,
-  });
+  try {
+    // getting the playlist url
+    const playlistURL = req.body["playlistURL"];
+    // getting html content from the playlist url
+    const htmlContent = await getHTMLContent(playlistURL);
+    // getting the list of audio titles and album title
+    const albumObj = await getAlbumInfo(htmlContent);
+    //  gets the ytCat objects for all songs
+    const ytCatObjs = await getYTCatObjs(albumObj["songTitles"], res);
+    // sending final response
+    res.send({
+      status: true,
+      albumTitle: albumObj["albumTitle"],
+      audioTitlesInGaana: albumObj["songTitles"].length,
+      audioObjsFetched: ytCatObjs.length,
+      data: ytCatObjs,
+    });
+  } catch (err) {
+    // sending error response
+    res.send({ status: false, error: err });
+  }
 };
