@@ -5,7 +5,7 @@ const express = require("express");
 const router = express.Router();
 
 // importing required controllers
-const fetchGannaController = require("../controllers/fetchGaana");
+const fetchGannaController = require("../controllers/fetchGaana/fetchGaana");
 
 // declaring required routes
 router.post("/gaana", fetchGannaController.fetchGannaSongs);
