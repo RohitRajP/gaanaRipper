@@ -61,18 +61,24 @@ const processExistingObjDB = async (ripperJobDoc) => {
     // changing operation based on ripperJon status
     switch (ripperJobStatus) {
       case "Processing":
-        return { status: true, data: ripperJobDoc.ripData };
+        return {
+          status: true,
+          data: ripperJobDoc.ripData,
+        };
       case "Error":
         // deleting the document to allow retrying
         await RipperCollection.deleteOne(
           { ripId: ripperJobDoc.ripId },
           (err) => {
-            console.log("Error Progress document deleted to allow retries");
+            console.log("Error in document deleting");
           }
         );
         return { status: false };
       case "Completed":
-        return { status: true, data: ripperJobDoc.ripData };
+        return {
+          status: true,
+          data: ripperJobDoc.ripData,
+        };
     }
   } catch (err) {
     console.log("Error in processExistingObjDb " + err);
@@ -106,6 +112,7 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
       if (existingDbObjRes["status"] === true) {
         res.send({
           status: true,
+          uniqueHash: hashedAlbumURL,
           data: existingDbObjRes["data"],
         });
       } else if (existingDbObjRes["status"] === false) {
