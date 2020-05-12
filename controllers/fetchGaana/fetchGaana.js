@@ -61,7 +61,7 @@ const processExistingObjDB = async (ripperJobDoc) => {
     // changing operation based on ripperJon status
     switch (ripperJobStatus) {
       case "Processing":
-        return true;
+        return { status: true, data: ripperJobDoc.ripData };
       case "Error":
         // deleting the document to allow retrying
         await RipperCollection.deleteOne(
@@ -70,9 +70,9 @@ const processExistingObjDB = async (ripperJobDoc) => {
             console.log("Error Progress document deleted to allow retries");
           }
         );
-        return false;
+        return { status: false };
       case "Completed":
-        return ripperJobDoc.ripData;
+        return { status: true, data: ripperJobDoc.ripData };
     }
   } catch (err) {
     console.log("Error in processExistingObjDb " + err);
@@ -103,12 +103,12 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
       // process the exsisting database object
       const existingDbObjRes = await processExistingObjDB(ripperJobExistence);
       // returning result based on the recieved response from database
-      if (existingDbObjRes === true) {
+      if (existingDbObjRes["status"] === true) {
         res.send({
           status: true,
-          data: "This job in processing...",
+          data: existingDbObjRes["data"],
         });
-      } else if (existingDbObjRes === false) {
+      } else if (existingDbObjRes["status"] === false) {
         res.send({
           status: false,
           error:
@@ -133,8 +133,13 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
   }
 };
 
-// updates the database POST job completion
-const updatePostRipperJobDB = async (albumObj, ytCatObjs, hashedAlbumURL) => {
+// updates the database while the job is running
+const updateRipperJobDB = async (
+  albumObj,
+  ytCatObjs,
+  hashedAlbumURL,
+  finalPush
+) => {
   try {
     // checking that all parameters are not null
     if (albumObj != null && ytCatObjs != null && hashedAlbumURL != null) {
@@ -145,21 +150,27 @@ const updatePostRipperJobDB = async (albumObj, ytCatObjs, hashedAlbumURL) => {
         audioObjsFetched: ytCatObjs.length,
         data: ytCatObjs,
       };
-
       // fetching the document for the current job from database (to check for error update)
       const currentDoc = await RipperCollection.findOne({
         ripId: hashedAlbumURL,
       });
-
       // checking if the progress value isn't error
       if (currentDoc.ripProgress !== "Error") {
         // updating the database
         await RipperCollection.updateOne(
           { ripId: hashedAlbumURL },
-          { ripData: ripDataObj, ripProgress: "Completed" },
+          {
+            ripData: ripDataObj,
+            ripProgress: !finalPush ? "Processing" : "Completed",
+          },
           (err) => {
             if (err) console.log("Error while updating data " + err);
-            else console.log("Job complete and database updated!");
+            else
+              console.log(
+                finalPush
+                  ? "Job complete and database updated!"
+                  : "Database Updated"
+              );
           }
         );
       } else console.log("Error progress detected, not updating database");
@@ -310,16 +321,16 @@ const getAlbumInfo = async (htmlContent, hashedAlbumURL) => {
 };
 
 // gets the ytCat objects for all songs
-const getYTCatObjs = async (songLst, hashedAlbumURL) => {
+const getYTCatObjs = async (hashedAlbumURL, albumObj) => {
+  // get the songLst from the albumObj
+  const songLst = albumObj["songsLst"];
   // holds the list of YTCatObjects
   const ytCatObjs = [];
-
   // iterating through each audioTitle
   for (const song of songLst) {
     // run till error is returned or the value is fetched
     while (true) {
       console.log(song);
-
       console.log("GETTING " + song["title"]);
       try {
         // setting up URL to ping
@@ -340,6 +351,8 @@ const getYTCatObjs = async (songLst, hashedAlbumURL) => {
             console.log("GOT", "\n");
             // pushing data into list
             ytCatObjs.push(ytCatResponse.data["data"][0]);
+            // sending object to add song to database
+            await updateRipperJobDB(albumObj, ytCatObjs, hashedAlbumURL, false);
             break;
           } else {
             console.log("Returned NULL... Retrying");
@@ -363,7 +376,7 @@ const getYTCatObjs = async (songLst, hashedAlbumURL) => {
 // function to call to update the database as error and end the application
 const handleErrors = async (hashedAlbumURL) => {
   // updating database
-  await updatePostRipperJobDB(null, null, hashedAlbumURL);
+  await updateRipperJobDB(null, null, hashedAlbumURL);
 };
 // fetches the gaana song list
 exports.fetchGannaSongs = async (req, res, next) => {
@@ -386,12 +399,9 @@ exports.fetchGannaSongs = async (req, res, next) => {
       // getting the list of audio titles and album title
       const albumObj = await getAlbumInfo(htmlContent, hashedAlbumURL);
       //  gets the ytCat objects for all songs
-      const ytCatObjs = await getYTCatObjs(
-        albumObj["songsLst"],
-        hashedAlbumURL
-      );
-      // updates the database POST job completion
-      await updatePostRipperJobDB(albumObj, ytCatObjs, hashedAlbumURL);
+      const ytCatObjs = await getYTCatObjs(hashedAlbumURL, albumObj);
+      //updates the database POST job completion
+      await updateRipperJobDB(albumObj, ytCatObjs, hashedAlbumURL, true);
     }
   } catch (err) {
     console.log("Main method error: " + err);
