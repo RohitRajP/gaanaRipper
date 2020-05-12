@@ -112,7 +112,6 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
       if (existingDbObjRes["status"] === true) {
         res.send({
           status: true,
-          uniqueHash: hashedAlbumURL,
           data: existingDbObjRes["data"],
         });
       } else if (existingDbObjRes["status"] === false) {

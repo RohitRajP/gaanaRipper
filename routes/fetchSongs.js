@@ -6,8 +6,10 @@ const router = express.Router();
 
 // importing required controllers
 const fetchGannaController = require("../controllers/fetchGaana/fetchGaana");
+const deleteGannaController = require("../controllers/fetchGaana/deleteGaanaDoc");
 
 // declaring required routes
 router.post("/gaana", fetchGannaController.fetchGannaSongs);
+router.post("/gaana/delete", deleteGannaController.deleteGaanaDoc);
 
 module.exports = router;
