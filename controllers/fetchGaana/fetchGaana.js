@@ -140,7 +140,6 @@ const updatePostRipperJobDB = async (albumObj, ytCatObjs, hashedAlbumURL) => {
     if (albumObj != null && ytCatObjs != null && hashedAlbumURL != null) {
       // creating object to update the ripData in database with
       const ripDataObj = {
-        status: true,
         albumTitle: albumObj["albumTitle"],
         audioTitlesInGaana: albumObj["songsLst"].length,
         audioObjsFetched: ytCatObjs.length,
