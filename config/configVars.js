@@ -1,3 +1,3 @@
 // declares required variables
 module.exports.mongoDbURL =
-  "momongodb+srv://rohitraj:shanthiraj13@cluster0-uepka.mongodb.net/obs";
+  "mongodb://localhost:27017/obs?readPreference=primary&appname=MongoDB%20Compass%20Community&ssl=false";

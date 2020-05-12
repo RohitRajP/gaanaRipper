@@ -112,6 +112,8 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
       if (existingDbObjRes["status"] === true) {
         res.send({
           status: true,
+          isProcessing:
+            ripperJobExistence.ripProgress === "Processing" ? true : false,
           data: existingDbObjRes["data"],
         });
       } else if (existingDbObjRes["status"] === false) {

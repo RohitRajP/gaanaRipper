@@ -10,6 +10,6 @@ const deleteGannaController = require("../controllers/fetchGaana/deleteGaanaDoc"
 
 // declaring required routes
 router.post("/gaana", fetchGannaController.fetchGannaSongs);
-router.post("/gaana/delete", deleteGannaController.deleteGaanaDoc);
+router.delete("/gaana", deleteGannaController.deleteGaanaDoc);
 
 module.exports = router;
