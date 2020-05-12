@@ -327,7 +327,7 @@ const getYTCatObjs = async (songLst, hashedAlbumURL) => {
         let ytcatUrl =
           obsHost +
           "/ytcat?q=" +
-          song["title"] +
+          song["title"].replace(/[^\w\s-]/gi, "") +
           " " +
           song["artist"] +
           " audio&fr=true";
@@ -366,7 +366,6 @@ const handleErrors = async (hashedAlbumURL) => {
   // updating database
   await updatePostRipperJobDB(null, null, hashedAlbumURL);
 };
-
 // fetches the gaana song list
 exports.fetchGannaSongs = async (req, res, next) => {
   try {
