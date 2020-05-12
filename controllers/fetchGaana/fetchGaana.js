@@ -346,7 +346,7 @@ const getYTCatObjs = async (hashedAlbumURL, albumObj) => {
           song["title"].replace(/[^\w\s-]/gi, "") +
           " " +
           song["artist"] +
-          " audio&fr=true";
+          " lyrics&fr=true";
         console.log(ytcatUrl);
         // sending ytCat request
         let ytCatResponse = await axios.get(ytcatUrl);
