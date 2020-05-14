@@ -1,21 +1,17 @@
 // importing required packages
 const express = require("express");
-const bodyParser = require("body-parser");
-const configVars = require("./config/configVars");
-const mongoose = require("mongoose");
 
 // importing requiried routes
-const fetchSongs = require("./routes/fetchSongs");
+const getHTMLRoute = require("./routes/getHTML");
 
 // initiating middlewares
 const app = express();
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
 app.use(express.json());
 
 // declaring global routes
-app.use("/fetchsongs", fetchSongs);
+app.use("/", getHTMLRoute);
 
-
+// listening to port
 app.listen(process.env.PORT || 4000);
+
+console.log("Server started and running on PORT", process.env.PORT || 4000);
