@@ -9,7 +9,9 @@ const fetchSongs = require("./routes/fetchSongs");
 
 // initiating middlewares
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 app.use(express.json());
 
 // declaring global routes

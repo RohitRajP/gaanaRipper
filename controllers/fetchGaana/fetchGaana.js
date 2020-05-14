@@ -33,6 +33,9 @@ const getHTMLContent = async (playlistURL) => {
 // fetches the gaana song list
 exports.fetchGannaSongs = async (req, res, next) => {
 
+  const playlistURL = req.body["playlistURL"];
+  console.log(playlistURL);
+
   // getting html content from the playlist url
   const htmlContent = await getHTMLContent(playlistURL);
 
