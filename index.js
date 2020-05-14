@@ -17,17 +17,5 @@ app.use(express.json());
 // declaring global routes
 app.use("/fetchsongs", fetchSongs);
 
-// connection to database, and only then starting the application
-mongoose
-  .connect(configVars.mongoDbURL, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-  })
-  .then((result) => {
-    app.listen(process.env.PORT || 4000);
-    console.log("Server started and database connection established");
-  })
-  .catch((err) => {
-    console.log("Database Connection error: " + err);
-  });
+
+app.listen(4000);
