@@ -18,4 +18,4 @@ app.use(express.json());
 app.use("/fetchsongs", fetchSongs);
 
 
-app.listen(4000);
+app.listen(process.env.PORT || 4000);
