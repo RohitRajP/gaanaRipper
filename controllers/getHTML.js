@@ -1,8 +1,6 @@
 // importing required packages
-const cheerio = require("cheerio");
-const axios = require("axios");
 const puppeteer = require("puppeteer");
-const crypto = require("crypto");
+
 
 
 // gets the html content of the playlist page
