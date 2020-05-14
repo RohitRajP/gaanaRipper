@@ -39,6 +39,10 @@ exports.fetchGannaSongs = async (req, res, next) => {
   // getting html content from the playlist url
   const htmlContent = await getHTMLContent(playlistURL);
 
+  // log the process completion
+  console.log("Data fetched");
+
+  // sending back response
   res.send({
     status: true,
     htmlContent: htmlContent
