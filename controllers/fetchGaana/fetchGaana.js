@@ -2,8 +2,7 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
 const puppeteer = require("puppeteer");
-const mongoose = require("mongoose");
-const md5 = require("md5");
+const crypto = require("crypto");
 
 // holds the ytCat url
 const obsHost = "https://staging-api.openbeats.live";
@@ -99,7 +98,8 @@ const databaseOperations = async (req, res, hashedAlbumURL) => {
       if (createJobRes) {
         res.send({
           status: true,
-          data: "Your job has been queued and is processing...",
+          isProcessing: true,
+          data: [],
         });
         return true;
       } else {
@@ -390,7 +390,10 @@ const handleErrors = async (hashedAlbumURL) => {
 exports.fetchGannaSongs = async (req, res, next) => {
   try {
     // hashing the fetched album url
-    const hashedAlbumURL = await md5(req.body["playlistURL"]);
+    const hashedAlbumURL = crypto
+      .createHash("md5")
+      .update(req.body["playlistURL"])
+      .digest("hex");
     // initiating database operations
     const databaseOperationsRes = await databaseOperations(
       req,

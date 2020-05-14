@@ -1,6 +1,5 @@
 // importing required packages
-const mongoose = require("mongoose");
-const md5 = require("md5");
+const crypto = require("crypto");
 
 // importing required models
 const RipperCollection = require("../../models/ripperCollection");
@@ -8,7 +7,10 @@ const RipperCollection = require("../../models/ripperCollection");
 // deletes the requested gaana collection doc from database
 module.exports.deleteGaanaDoc = async (req, res, next) => {
   // computing the required hash
-  const hashedAlbumURL = md5(req.body["playlistURL"]);
+  const hashedAlbumURL = crypto
+    .createHash("md5")
+    .update(req.body["playlistURL"])
+    .digest("hex");
 
   // deleting the required document
   await RipperCollection.findOneAndRemove(
