@@ -6,7 +6,6 @@ const getHTMLRoute = require("./routes/getHTML");
 
 // initiating middlewares
 const app = express();
-app.use(express.json());
 
 // declaring global routes
 app.use("/", getHTMLRoute);
