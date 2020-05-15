@@ -146,7 +146,7 @@ exports.getHTMLContent = async (req, res, next) => {
                     // sending back response
                     res.send({
                         status: false,
-                        error: "Could not get playlist information from HTML"
+                        error: "Could not get playlist information from HTML. Please verify playlist URL."
                     });
                 } else {
                     // sending back response
